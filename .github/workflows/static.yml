@@ -1,0 +1,57 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy static content to Pages
+
+on:
+  # Se déclenche à chaque push sur la branche "main"
+  push:
+    branches: ['main'] # Ou "master" si c'est votre branche par défaut
+
+  # Vous permet de lancer ce workflow manuellement depuis l'onglet Actions
+  workflow_dispatch:
+
+# Autorise ce workflow à écrire sur la branche de déploiement
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Permet un seul déploiement concurrent, annule les exécutions précédentes
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  # Tâche de construction (build)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18 # Spécifiez la version de Node.js que vous utilisez
+          cache: 'npm' # Ou 'yarn', 'pnpm'
+      - name: Install dependencies
+        run: npm install # Ou 'yarn install', 'pnpm install'
+      - name: Build
+        run: npm run build # Ou la commande de build de votre projet
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # C'est ici que Vite place les fichiers construits
+          path: './dist'
+
+  # Tâche de déploiement
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build # Cette tâche ne démarre que si la tâche "build" a réussi
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
